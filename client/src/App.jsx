@@ -29,10 +29,10 @@ function App() {
               </Link>
               <Link
                 to="/blog"
-                className="hover:text-garden-green transition flex items-center gap-2"
+                className="flex flex-row items-center hover:text-garden-green transition gap-2"
               >
-                <BookOpen className="w-4 h-4" />
-                Blog
+                <BookOpen className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                <span className="font-semibold text-sm">Blog</span>
               </Link>
               <Link
                 to="/admin"

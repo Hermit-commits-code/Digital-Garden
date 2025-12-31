@@ -4,7 +4,7 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { Link, useParams } from "react-router-dom";
-import { ArrowLeft, Dot } from "lucide-react";
+import { ArrowLeft, Calendar, Clock, Dot } from "lucide-react";
 
 export default function PostDetail() {
   const { slug } = useParams();
@@ -77,28 +77,32 @@ export default function PostDetail() {
           <h1 className="text-5xl font-black text-stone-900 mb-4 leading-tight">
             {post.title}
           </h1>
-          <div className="flex gap-4 text-stone-400 text-sm uppercase tracking-widest font-bold">
-            <span>{post.readingTime}</span>
-            <span>
-              <Dot />
+          {/* Meta-data  */}
+          <div className="flex items-center gap-4 text-stone-400 text-[11px] font-bold uppercase tracking-widest mb-10 bg-stone-50 w-fit px-4 py-2 rounded-full border border-stone-100">
+            <span className="flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5" /> {post.readingTime}
             </span>
-            <span>{new Date(post.createdAt).toLocaleDateString()}</span>
+            <span className="text-stone-200">|</span>
+            <span className="flex items-center gap-1.5">
+              <Calendar className="w-3.5 h-3.5" />{" "}
+              {new Date(post.createdAt).toLocaleDateString()}
+            </span>
           </div>
         </header>
         {/* --- Main Layout Grid --- */}
-        <div className="flex flex-col lg:flex-row gap-16">
+        <div className="grid grid-cols-1 lg:grid-cols[250px_1fr] gap-16 mt-12">
           {/* Table of Contents Sidebar */}
-          <aside className="hidden lg:block w-64 sticky top-28 self-start">
-            <h3 className="text-xs font-bold uppercase text-stone-400 mb-4 tracking-widest">
+          <aside className="hidden lg:block w-64 sticky top-28 self-start border-l border-stone-100 pl-6">
+            <h3 className="text-[10px] font-black uppercase text-stone-400 mb-4 tracking-[0.2em]">
               On this page
             </h3>
             <nav>
-              <ul className="space-y-4 border-l border-stone 100 pl-4">
+              <ul className="space-y-4">
                 {headings.map((heading) => (
                   <li key={heading}>
                     <a
                       href={`#${heading.toLowerCase().replace(/\s+/g, "-")}`}
-                      className="text-sm text-stone-500 hover:text-garden-green transition-colors duration-200 block"
+                      className="text-sm text-stone-500 hover:text-garden-green transition-all block"
                     >
                       {heading}
                     </a>
@@ -109,14 +113,7 @@ export default function PostDetail() {
           </aside>
 
           {/* Article Content */}
-          <div className="flex-1 max-w-3xl prose prose-stone lg:prose-xl prose-headings:scroll-mt-24">
-            {post.coverImage && (
-              <img
-                src={post.coverImage}
-                alt=""
-                className="w-full h-96 object-cover rounded-3xl mb-12 shadow-xl"
-              />
-            )}
+          <div className="flex-1 prose prose-stone lg:prose-xl max-w-none prose-img:rounded-3xl prose-headings:scroll-mt-28">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {post.content}
             </ReactMarkdown>

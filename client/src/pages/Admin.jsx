@@ -72,12 +72,6 @@ export default function Admin() {
           value={post.tags}
           onChange={(e) => setPost({ ...post, tags: e.target.value })}
         />
-        <textarea
-          className="w-full h-96 outline-none text-lg leading-relaxed font-mono bg-stone-50 p-4 rounded-xl"
-          placeholder="Write your story in Markdown..."
-          value={post.content}
-          onChange={(e) => setPost({ ...post, content: e.target.value })}
-        />
         <button className="bg-garden-green text-white px-8 py-3 rounded-full font-bold hover:shadow-lg transition">
           Publish to Library
         </button>
