@@ -1,0 +1,14 @@
+@import "tailwindcss";
+
+/* This is how you define custom theme variables in v4 */
+@theme {
+  --color-garden-green: #2d5a27;
+  --color-garden-soil: #4b3621;
+  --color-garden-leaf: #a7c957;
+}
+
+body {
+  background-color: var(--color-stone-50);
+  color: var(--color-stone-900);
+  font-family: "Inter", sans-serif;
+}
