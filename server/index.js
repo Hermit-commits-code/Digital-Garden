@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const Note = require("./models/Note");
+const Post = require("./models/Post");
+const slugify = require("speakingurl"); // This turns My First Post into my-first-post
 require("dotenv").config();
 
 const app = express();
@@ -16,6 +18,8 @@ mongoose
   .connect(process.env.MONGO_URI)
   .then(() => console.log("Database connected! :maple_leaf:"))
   .catch((error) => console.error("Database connection error:", error));
+
+// --- NOTE ROUTES ---
 
 // CREATE Note Route
 app.post("/api/notes", async (request, response) => {
@@ -45,6 +49,54 @@ app.delete("/api/notes/:id", async (request, response) => {
   try {
     await Note.findByIdAndDelete(request.params.id);
     response.json({ message: "Note pulled from the garden!" });
+  } catch (error) {
+    response.status(500).json({ message: error.message });
+  }
+});
+
+// --- BLOG ROUTES ---
+app.get("/api/posts", async (request, response) => {
+  try {
+    const posts = await Post.find().sort({ createdAt: -1 });
+    response.json(posts);
+  } catch (error) {
+    response.status(500).json({ message: error.message });
+  }
+});
+
+app.post("/api/posts", async (request, response) => {
+  const { title, content, tags, coverImage } = request.body;
+
+  // Auto-generate a URL-friendly slug from the title
+  const slug = slugify(title);
+
+  // Calculate a rough reading time (avg 200 words per minute)
+  const words = content.split(" ").length;
+  const readingTime = Math.ceil(words / 200) + " min read";
+
+  const newPost = new Post({
+    title,
+    slug,
+    content,
+    tags,
+    coverImage,
+    readingTime,
+    excerpt: content.substring(0, 150) + "...", // First 150 chars as preview
+  });
+
+  try {
+    const savedPost = await newPost.save();
+    response.status(201).json(savedPost);
+  } catch (error) {
+    response.status(400).json({ message: error.message });
+  }
+});
+
+app.get("/api/posts/:slug", async (request, response) => {
+  try {
+    const post = await Post.findOne({ slug: request.params.slug });
+    if (!post) return response.status(404).json({ message: "Post not found" });
+    response.json(post);
   } catch (error) {
     response.status(500).json({ message: error.message });
   }
