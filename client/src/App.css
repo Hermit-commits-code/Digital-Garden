@@ -1,14 +1,37 @@
 @import "tailwindcss";
 
-/* This is how you define custom theme variables in v4 */
 @theme {
-  --color-garden-green: #2d5a27;
-  --color-garden-soil: #4b3621;
-  --color-garden-leaf: #a7c957;
+  /* Semantic Variables - These names stay the same, values change */
+  --color-bg-page: #f9f8f6; /* Very light stone/paper */
+  --color-bg-card: #ffffff;
+  --color-text-main: #1c1917; /* Stone 900 */
+  --color-text-muted: #78716c; /* Stone 500 */
+  --color-accent: #2d5a27; /* Garden Green */
+  --color-border: #e7e5e4; /* Stone 200 */
+
+  --transition-theme: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* --- THE GARDEN (Default) --- */
+:root {
+  /* Already defined in @theme, but we can override if needed */
+}
+
+/* --- THE CYBERPUNK --- */
+[data-theme="cyberpunk"] {
+  --color-bg-page: #050505;
+  --color-bg-card: #0f0f12;
+  --color-text-main: #00f2ff; /* Neon Cyan */
+  --color-text-muted: #008f96;
+  --color-accent: #ff007f; /* Neon Pink */
+  --color-border: #1a1a1f;
+
+  font-family: "Courier New", monospace;
 }
 
 body {
-  background-color: var(--color-stone-50);
-  color: var(--color-stone-900);
+  background-color: var(--color-bg-page);
+  color: var(--color-text-main);
+  transition: var(--transition-theme);
   font-family: "Inter", sans-serif;
 }
