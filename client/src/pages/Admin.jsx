@@ -1,39 +1,82 @@
-import React, { useState, useEffect } from "react";
-import { useLocation, useNavigate } from "react-router-dom"; // Add these
+import React, { useState, useEffect, useCallback } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
 export default function Admin() {
-  const [post, setPost] = useState({
-    title: "",
-    content: "",
-    tags: "",
-    coverImage: "",
-  });
-
+  const [timeLeft, setTimeLeft] = useState(25 * 60);
+  const [isActive, setIsActive] = useState(false);
   const [status, setStatus] = useState("");
   const [isEditing, setIsEditing] = useState(false);
+
   const location = useLocation();
   const navigate = useNavigate();
   const query = new URLSearchParams(location.search);
   const editId = query.get("edit");
 
-  // Fetch existing post if editId is present
+  const [post, setPost] = useState(() => {
+    // Use a "Lazy Initializer" to check for drafts before the component even renders
+    if (
+      typeof window !== "undefined" &&
+      !new URLSearchParams(window.location.search).get("edit")
+    ) {
+      const saved = localStorage.getItem("garden-draft");
+      return saved
+        ? JSON.parse(saved)
+        : { title: "", content: "", tags: "", coverImage: "" };
+    }
+    return { title: "", content: "", tags: "", coverImage: "" };
+  });
+
+  useEffect(() => {
+    let interval = null;
+    if (isActive) {
+      interval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+            clearInterval(interval);
+            setIsActive(false);
+            alert("Time for a break! Seed planted? 🌿");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+    return () => clearInterval(interval);
+  }, [isActive]); // Removed timeLeft from dependencies
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
+  };
+
+  // 2. AUTO-SAVE LOGIC
+  useEffect(() => {
+    if (!isEditing && post.content.length > 10) {
+      const saver = setTimeout(() => {
+        localStorage.setItem("garden-draft", JSON.stringify(post));
+      }, 1000);
+      return () => clearTimeout(saver);
+    }
+  }, [post, isEditing]);
+
+  // 3. FETCH LOGIC
   useEffect(() => {
     if (editId) {
       const fetchPostToEdit = async () => {
         try {
-          const res = await axios.get(
+          const response = await axios.get(
             `http://localhost:5000/api/posts/id/${editId}`
           );
-          setPost({
-            ...res.data,
-            tags: res.data.tags.join(", "), // Convert array back to string for input
-          });
+          setPost({ ...response.data, tags: response.data.tags.join(", ") });
           setIsEditing(true);
-        } catch (error) {
-          setStatus("Error loading post for edit.");
+        } catch (err) {
+          // Fixed unused 'error'
+          console.error(err);
+          setStatus("Error loading post.");
         }
       };
       fetchPostToEdit();
@@ -48,120 +91,135 @@ export default function Admin() {
         content: post.content.trim(),
         tags: post.tags.split(",").map((t) => t.trim()),
       };
-
       if (isEditing) {
-        // Use PUT for updates
         await axios.put(
           `http://localhost:5000/api/posts/${editId}`,
           formattedPost
         );
-        setStatus("Post updated successfully! ✨");
+        setStatus("Post updated! ✨");
       } else {
-        // Use POST for new items
+        // FIXED: Changed .put to .post for new entries
         await axios.post("http://localhost:5000/api/posts", formattedPost);
-        setStatus("Post published successfully! 🚀");
+        localStorage.removeItem("garden-draft");
+        setStatus("Post published! 🚀");
       }
-
-      // Optional: Redirect back to blog after a delay
       setTimeout(() => navigate("/blog"), 2000);
-    } catch (error) {
-      setStatus("Error saving post.");
+    } catch (err) {
+      // Fixed unused 'error'
+      console.error(err);
+      setStatus("Error saving.");
     }
   };
-  // Helper to calculate stats
-  const getStats = (text) => {
-    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
-    const minutes = Math.ceil(words / 200); // Average reading speed of 200 wpm
-    return { words, minutes };
-  };
 
-  const stats = getStats(post.content);
+  const stats = useCallback((text) => {
+    const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+    return { words, minutes: Math.ceil(words / 200) };
+  }, []);
 
   return (
-    <div className="max-w-4xl mx-auto py-10">
-      <h1 className="text-3xl font-bold mb-8 text-text-main">
-        {isEditing ? "Edit Post" : "New Blog Post"}
-      </h1>
-      <form
-        onSubmit={handleSubmit}
-        className="space-y-6 bg-bg-page p-8 rounded-2xl shadow-sm border-border"
-      >
-        <input
-          className="w-full text-4xl font-bold outline-none border-b border-stone-100"
-          placeholder="Enter title..."
-          value={post.title}
-          onChange={(e) => setPost({ ...post, title: e.target.value })}
-        />
-
-        <div className="space-y-2">
-          <label className="text-xs font-bold uppercase text-text-muted tracking-widest">
-            Cover Image
-          </label>
-          <div className="flex gap-2">
-            <input
-              className="w-full outline-none text-text-main"
-              placeholder="Cover Image URL (Unsplash link works best)"
-              value={post.coverImage}
-              onChange={(e) => setPost({ ...post, coverImage: e.target.value })}
-            />
-            {/* Quick Link to Unsplash */}
-            <a
-              href="https://unsplash.com"
-              target="_blank"
-              rel="noreferrer"
-              className="px-4 py-3 bg-accent text-white rounded-lg text-xs font-bold hover:bg-accent transition flex items-center whitespace-nowrap"
-            >
-              FIND PHOTO
-            </a>
+    <div className="min-h-screen bg-white text-stone-900 font-sans">
+      {/* FOCUS BAR */}
+      <div className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-stone-100 px-6 py-3 flex justify-between items-center">
+        <div className="flex items-center gap-4">
+          <h2 className="text-[10px] font-black uppercase tracking-widest text-stone-400">
+            Focus Flow
+          </h2>
+          <div
+            className={`px-3 py-1 rounded-full font-mono text-sm border ${
+              isActive
+                ? "bg-emerald-50 border-emerald-200 text-emerald-700"
+                : "bg-stone-50 border-stone-200 text-stone-500"
+            }`}
+          >
+            {formatTime(timeLeft)}
           </div>
+          <button
+            onClick={() => setIsActive(!isActive)}
+            className="text-[10px] font-bold uppercase text-accent hover:underline"
+          >
+            {isActive ? "Pause" : "Start Session"}
+          </button>
         </div>
-        <input
-          className="w-full outline-none text-text-main"
-          placeholder="Tags (comma separated: Coding, Life, React)"
-          value={post.tags}
-          onChange={(e) => setPost({ ...post, tags: e.target.value })}
-        />
-        <button className="bg-accent text-white px-8 py-3 rounded-full font-bold hover:shadow-lg transition">
-          {isEditing ? "Save Changes" : "Publish to Library"}
-        </button>
-        {status && (
-          <p className="mt-4 font-medium text-garden-green">{status}</p>
-        )}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-10">
-          <div className="flex flex-col">
-            <label className="text-xs font-bold uppercase text-muted mb-2">
-              Editor
-            </label>
+        <button
+          onClick={handleSubmit}
+          className="bg-accent text-white px-5 py-1.5 rounded-full text-xs font-bold hover:shadow-md transition"
+        >
+          {isEditing ? "Update" : "Publish Seed"}
+        </button>
+      </div>
+
+      <div className="max-w-6xl mx-auto p-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+          {/* EDITOR SIDE */}
+          <div className="space-y-6 flex flex-col h-[80vh]">
+            <input
+              value={post.title}
+              placeholder="Post Title"
+              onChange={(e) => setPost({ ...post, title: e.target.value })}
+              className="w-full text-4xl font-bold outline-none placeholder:text-stone-100 border-none focus:ring-0 transition-colors focus:placeholder:text-stone-300"
+            />
+
+            <div className="flex gap-4">
+              <input
+                className="flex-1 text-sm outline-none text-stone-500 border-b border-stone-50 focus:border-stone-200 pb-1"
+                value={post.tags}
+                placeholder="Tags: React, Life, Coding"
+                onChange={(e) => setPost({ ...post, tags: e.target.value })}
+              />
+              <input
+                className="flex-1 text-sm outline-none text-stone-500 border-b border-stone-50 focus:border-stone-200 pb-1"
+                value={post.coverImage}
+                placeholder="Cover Image URL"
+                onChange={(e) =>
+                  setPost({ ...post, coverImage: e.target.value })
+                }
+              />
+            </div>
+            {/* FIXED TEXTAREA: Changed onChange and style */}
             <textarea
-              className="w-full h-96 p-4 bg-bg-card rounded-xl font-mono text-sm outline-none border-border focus:border-border"
+              className="flex-1 w-full text-lg leading-relaxed outline-none resize-none placeholder:text-stone-100 font-serif border-none focus:ring-0 min-h-125"
               value={post.content}
+              placeholder="The soil is ready... start typing"
               onChange={(e) => setPost({ ...post, content: e.target.value })}
             />
           </div>
-          <div className="flex flex-col">
-            <div className="flex justify-between items-end mb-2">
-              <label className="text-xs font-bold uppercase text-text-muted tracking-widest">
-                Live Preview
-              </label>
-              <div className="flex gap-4 text-[10px] font-bold uppercase tracking-tighter text-text-muted">
-                <span className="bg-bg-page px-2 py-1 rounded border border-border">
-                  {stats.words} Words
+
+          {/* PREVIEW SIDE */}
+          <div className="border-l border-stone-50 pl-12 hidden lg:block overflow-y-auto h-[80vh]">
+            <div className="sticky top-0">
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-stone-300">
+                  Live Preview
                 </span>
-                <span className="bg-bg-page px-2 py-1 rounded border border-border">
-                  {stats.minutes} Min Read
+                <span className="text-[10px] font-bold uppercase text-stone-300">
+                  {stats(post.content).words} Words
                 </span>
               </div>
-            </div>
-
-            <div className="prose prose-custom max-w-none p-6 bg-bg-card rounded-xl border border-border h-96 overflow-y-auto shadow-inner">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {post.content}
-              </ReactMarkdown>
+              <article className="prose prose-stone prose-emerald max-w-none">
+                {post.coverImage && (
+                  <img
+                    src={post.coverImage}
+                    alt="Cover"
+                    className="w-full h-48 object-cover mb-8 rounded-2xl opacity-80"
+                  />
+                )}
+                <h1 className="text-4xl font-bold mb-4">
+                  {post.title || "Untitled Seed"}
+                </h1>
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {post.content}
+                </ReactMarkdown>
+              </article>
             </div>
           </div>
         </div>
-      </form>
+      </div>
+      {status && (
+        <div className="fixed bottom-8 right-8 bg-stone-900 text-white px-6 py-3 rounded-xl shadow-2xl text-sm font-bold">
+          {status}
+        </div>
+      )}
     </div>
   );
 }

@@ -2,6 +2,7 @@ import axios from "axios";
 import { useState, useEffect, useCallback } from "react";
 import { Trash2 } from "lucide-react";
 import { motion } from "framer-motion";
+
 export default function Garden() {
   // State or 'memory' of component
   const [notes, setNotes] = useState([]);
