@@ -102,6 +102,30 @@ app.get("/api/posts/:slug", async (request, response) => {
   }
 });
 
+app.get("/api/posts/id/:id", async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+    if (!post) return res.status(404).json({ message: "Post not found" });
+    res.json(post);
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+// Also, ensure you have a PUT route for the update logic to work!
+app.put("/api/posts/:id", async (req, res) => {
+  try {
+    const updatedPost = await Post.findByIdAndUpdate(
+      req.params.id,
+      req.body,
+      { new: true } // This returns the post AFTER it was updated
+    );
+    res.json(updatedPost);
+  } catch (error) {
+    res.status(500).json({ message: "Update failed" });
+  }
+});
+
 app.get("/", (request, response) => {
   response.send("The Digital Garden API is sprouting!");
 });

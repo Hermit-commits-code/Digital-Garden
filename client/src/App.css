@@ -1,37 +1,97 @@
 @import "tailwindcss";
 
 @theme {
-  /* Semantic Variables - These names stay the same, values change */
-  --color-bg-page: #f9f8f6; /* Very light stone/paper */
+  /* Semantic variables for a cleaner Garden look */
+  --color-bg-page: #f9f8f6;
   --color-bg-card: #ffffff;
-  --color-text-main: #1c1917; /* Stone 900 */
-  --color-text-muted: #78716c; /* Stone 500 */
-  --color-accent: #2d5a27; /* Garden Green */
-  --color-border: #e7e5e4; /* Stone 200 */
-
-  --transition-theme: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  --color-text-main: #1c1917;
+  --color-text-muted: #78716c;
+  --color-accent: #2d5a27;
+  --color-border: #e7e5e4;
 }
 
-/* --- THE GARDEN (Default) --- */
-:root {
-  /* Already defined in @theme, but we can override if needed */
-}
-
-/* --- THE CYBERPUNK --- */
-[data-theme="cyberpunk"] {
-  --color-bg-page: #050505;
-  --color-bg-card: #0f0f12;
-  --color-text-main: #00f2ff; /* Neon Cyan */
-  --color-text-muted: #008f96;
-  --color-accent: #ff007f; /* Neon Pink */
-  --color-border: #1a1a1f;
-
-  font-family: "Courier New", monospace;
-}
-
+/* --- Base Styles --- */
 body {
   background-color: var(--color-bg-page);
   color: var(--color-text-main);
-  transition: var(--transition-theme);
   font-family: "Inter", sans-serif;
+  margin: 0;
+}
+
+/* --- Typography & Markdown --- */
+.prose-custom {
+  --tw-prose-body: var(--color-text-main);
+  --tw-prose-headings: var(--color-accent);
+  --tw-prose-bold: var(--color-text-main);
+  --tw-prose-links: var(--color-accent);
+  --tw-prose-bullets: var(--color-accent);
+  max-width: none;
+}
+
+.prose-custom p {
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  line-height: 1.75;
+}
+
+.prose-custom h2,
+.prose-custom h3 {
+  margin-top: 2em;
+  margin-bottom: 1em;
+  font-weight: 800;
+  color: var(--color-text-main);
+}
+
+.prose-custom strong {
+  color: var(--color-accent);
+  font-weight: 700;
+}
+
+/* --- Heatmap Structural Fix --- */
+
+/* 1. Ensure the wrapper allows the SVG to be seen */
+.garden-heatmap,
+.heatmap-container {
+  width: 100%;
+  min-height: 130px;
+  display: block;
+  overflow: visible;
+}
+
+/* 2. Force the SVG to fill the space */
+.react-calendar-heatmap {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 3. Style the grid squares (The most important part) */
+.react-calendar-heatmap rect {
+  shape-rendering: crispEdges;
+  rx: 2; /* Rounded corners for the Mochi look */
+  ry: 2;
+}
+
+/* 4. The Colors */
+/* Empty squares (The Grid) */
+.react-calendar-heatmap .color-empty {
+  fill: #e5e7eb !important; /* Visible stone gray */
+}
+
+/* Filled squares (Your actual activity) */
+.react-calendar-heatmap .color-garden-green {
+  fill: #4ade80 !important; /* Vibrant Garden Green */
+}
+
+/* 5. Labels (Jan, Feb, etc.) */
+.react-calendar-heatmap text {
+  font-size: 8px;
+  fill: #78716c !important;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.react-calendar-heatmap-month-label {
+  dominant-baseline: hanging;
 }
